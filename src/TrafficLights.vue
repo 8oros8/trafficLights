@@ -9,11 +9,11 @@ export default {
     }
   },
   methods : {
-    redGreenHandler: function (color) {
+    redGreenHandler: function (color, localTimer, localColor) {
       if (color === 'green') {
         let flickeringGreen1
         let flickeringGreen2
-        this.timer = 15
+        this.timer = localColor === this.$route.params.color? localTimer: 15
         let countdown = setInterval(() => {
           this.timer--
         }, 1000)
@@ -24,21 +24,21 @@ export default {
           flickeringGreen2 = setInterval(() => {
             document.querySelector('.greenCircle').style.opacity = '1'
           }, 1000)
-        }, 12000)
+        }, 1000*(this.timer - 3))
         setTimeout( () => {
           clearInterval(countdown)
           clearInterval(flickeringGreen1)
           clearInterval(flickeringGreen2)
           this.$router.push('/yellow')
-        }, 15000)
+        }, 1000*this.timer)
       }
       if (color === 'red') {
-        this.timer = 10
+        let flickeringRed1
+        let flickeringRed2
+        this.timer = localColor === this.$route.params.color? localTimer: 10
         let countdown = setInterval(() => {
           this.timer--
         }, 1000)
-        let flickeringRed1
-        let flickeringRed2
         setTimeout(() => {
           flickeringRed1 = setInterval(() => {
             document.querySelector('.redCircle').style.opacity = '0.2'
@@ -46,18 +46,19 @@ export default {
           flickeringRed2 = setInterval(() => {
             document.querySelector('.redCircle').style.opacity = '1'
           }, 1000)
-        }, 7000)
+        }, 1000*(this.timer - 3))
         setTimeout( () => {
           clearInterval(countdown)
           clearInterval(flickeringRed1)
           clearInterval(flickeringRed2)
           this.$router.push('/yellow')
-        }, 10000)
+        }, 1000*this.timer)
       }
     }
   },
   watch: {
     color: function (newColor, previousColor) {
+      localStorage.color = newColor
       this.redGreenHandler(newColor)
       if (newColor === 'yellow') {
         this.timer = 3
@@ -68,29 +69,47 @@ export default {
           setTimeout( () => {
             clearInterval(countdown)
             this.$router.push('/red')
-          }, 3000)
+          }, 1000*this.timer)
         }
         if (previousColor === 'red') {
           setTimeout( () => {
             clearInterval(countdown)
             this.$router.push('/green')
-          }, 3000)
+          }, 1000*this.timer)
         }
       }
+    },
+    timer: function (newTimer) {
+      localStorage.timer = newTimer
     }
   },
   created() {
-    this.redGreenHandler(this.$route.params.color)
+    this.redGreenHandler(this.$route.params.color, localStorage.timer, localStorage.color)
     if (this.$route.params.color === 'yellow') {
-      this.timer = 3
+      this.timer = localStorage.color === this.$route.params.color? localStorage.timer: 3
       let countdown = setInterval(() => {
         this.timer--
       }, 1000)
-      setTimeout( () => {
-        clearInterval(countdown)
-        this.$router.push('/red')
-      }, 3000)
+      if (localStorage.color === 'red') {
+        setTimeout( () => {
+          clearInterval(countdown)
+          this.$router.push('/green')
+        }, 1000*this.timer)
+      }
+      if (localStorage.color === 'green') {
+        setTimeout( () => {
+          clearInterval(countdown)
+          this.$router.push('/red')
+        }, 1000*this.timer)
+      }
+      if (localStorage.color === 'yellow') {
+        setTimeout( () => {
+          clearInterval(countdown)
+          this.$router.push('/red')
+        }, 1000*this.timer)
+      }
     }
+    localStorage.color = this.color
   }
 }
 
@@ -103,7 +122,7 @@ export default {
   <div v-else class="yellowCircle"></div>
   <div v-if="color === 'green'" class="greenCircle enabled"></div>
   <div v-else class="greenCircle"></div>
-  <div class="timer">{{color}}: {{timer}}</div>
+  <div class="timerWrapper">{{color}}: {{timer}}</div>
 </template>
 
 <style>
@@ -121,7 +140,7 @@ body {
   align-items: center;
 }
 
-.timer {
+.timerWrapper {
   display: flex;
   background-color: white;
   height: 8vh;
